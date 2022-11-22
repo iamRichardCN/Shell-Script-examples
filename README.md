@@ -1,2 +1,2 @@
 # Shell-Script-examples
-This repository contains examples scripts created
+This repository contains examples automation done with shell script
