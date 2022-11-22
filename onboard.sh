@@ -8,7 +8,7 @@
 #!/bin/bash
 
 userfile=$(cat names.csv)
-password=password
+PASSWORD=password
 
 #to ensure only users with sudo priveledges can run this script
  if [ $(id -u) -eq 0 ]; then
