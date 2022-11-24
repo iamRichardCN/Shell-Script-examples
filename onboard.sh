@@ -9,50 +9,60 @@
 # For each user’s SSH configuration, We will create an authorized_keys file and add the below public key.
 
 
-users=$(cat ./names.csv)
+userfile=$(cat names.csv)
+PASSWORD=password
 
-# TO CREATE A USER
-for user in $users
- do
-if [ -e "/etc/passwd/$user" ]
- then
-        echo "The user $user exist"
- else
-        sudo useradd "$user"
-        echo "The user $user is created successfully"
-        sudo usermod -a -G developers "$user"
-        echo "User $user is added to developers group"
-fi
-done
+# To ensure the user running this script has sudo privilege
+    if [ $(id -u) -eq 0 ]; then
 
-# TO CREATE HOME DIRECTORY FOR A USER IF IT DOES NOT EXIST
-for user in $users
- do
-if [ -d "/home/$user" ]
- then
-       echo "The directory /home/$user exist"
- else
-sudo mkdir -p /home/"$user"
-        echo "The home directory of the user $user /home/$user is created successfully"
-        sudo usermod -d /home/"$user" "$user"
-fi
-done
+# Reading the CSV file
+	for user in $userfile;
+	do
+            echo "$user"
+        if id "$user" &>/dev/null
+        then
+            echo "User Exist"
+        else
 
-# TO CREATE .SSH FOLDER FOR THE USER AND PASTE THE AUTHORIZED_KEYS FROM THE CURRENT USER IN THE SERVER TO THE NEW USER
-for user in $users
- do
-if [ -d "/home/$user/.ssh" ]
- then
-       echo "The directory /home/$user/.ssh exist"
- else
-        sudo mkdir "/home/$user/.ssh"
-        echo "The directory /home/$user/.ssh is created successfully"
-        sudo touch "/home/$user/.ssh/authorized_keys"
-        echo "The file authorized_keys is created successfully"
-        sudo chown "$USER":"$USER" /home/"$user"/.ssh
-        sudo chown "$USER":"$USER" /home/"$user"/.ssh/authorized_keys
-        cat "/home/somex/.ssh/authorized_keys" >> "/home/$user/.ssh/authorized_keys"
-        echo "authorized_key file transffered successfully"
-fi
-done
- 
+# This will create a new user
+        useradd -m -d /home/"$user" -s /bin/bash -g developers "$user"
+        echo "New User Created"
+        echo
+
+
+# This will create a ssh folder in the user home folder
+        su - -c "mkdir ~/.ssh" "$user"
+        echo ".ssh directory created for new user"
+        echo
+
+# We need to set the user permission for the ssh dir
+         su - -c "chmod 700 ~/.ssh" "$user"
+         echo "user permission for .ssh directory set"
+         echo
+
+# This will create an authorized-key file
+        su - -c "touch ~/.ssh/authorized_keys" "$user"
+        echo "Authorized Key File Created"
+        echo
+
+# We need to set permission for the key file
+        su - -c "chmod 600 ~/.ssh/authorized_keys" "$user"
+        echo "user permission for the Authorized Key File set"
+        echo
+
+# We need to create and set public key for users in the server
+        cp -R "/root/onboard/id_rsa.pub" "/home/$user/.ssh/authorized_keys"
+        echo "Copyied the Public Key to New User Account on the server"
+        echo
+        echo
+
+        echo "USER CREATED"
+
+# Generate a password.
+sudo echo -e "$PASSWORD\n$PASSWORD" | sudo passwd "$user" 
+sudo passwd -x 5 "$user"
+            fi
+        done
+    else
+    echo "Only Admin Can Onboard A User"
+    fi
